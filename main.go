@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -123,14 +125,14 @@ func (c *config) mapCmd() error {
 	// if c.next is anything but empty, it likely has a url and pull from that url
 	if c.next != "" {
 		fmt.Println("c.next has value: ", c.next)
-		if err := fetchAndEncode(c.next, &ah); err != nil {
+		if err := c.fetchFromCache(c.next, &ah); err != nil {
 			fmt.Println("error fetching c.next")
 			return err
 		}
 	} else {
 		fmt.Println("c.next did not have value, go to baserul")
 		// fetch and encode from baseapiurl
-		if err := fetchAndEncode(c.baseApiUrl, &ah); err != nil {
+		if err := c.fetchFromCache(c.baseApiUrl, &ah); err != nil {
 			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.baseApiUrl)
 			return err
 		}
@@ -150,11 +152,11 @@ func (c *config) mapCmd() error {
 func (c *config) mapbCmd() error {
 	var ah apiheader
 	if c.previous != "" {
-		if err := fetchAndEncode(c.previous, &ah); err != nil {
+		if err := c.fetchFromCache(c.previous, &ah); err != nil {
 			return err
 		}
 	} else {
-		if err := fetchAndEncode(c.baseApiUrl, &ah); err != nil {
+		if err := c.fetchFromCache(c.baseApiUrl, &ah); err != nil {
 			return err
 		}
 	}
@@ -171,26 +173,27 @@ func (c *config) mapbCmd() error {
 
 }
 
-func fetchAndEncode(url string, v any) error {
-	// check cache 1st
-	client := &http.Client{}
+// func fetchAndEncode(url string, v any) error {
+// 	// check cache 1st
+// 	client := &http.Client{}
 
-	resp, err := client.Get(url)
-	if err != nil {
-		return err
-	}
+// 	resp, err := client.Get(url)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	defer resp.Body.Close()
+// 	defer resp.Body.Close()
 
-	if err = json.NewDecoder(resp.Body).Decode(&v); err != nil {
-		return err
-	}
-	return nil
-}
+// 	if err = json.NewDecoder(resp.Body).Decode(&v); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
-func (c *config) fetchFromCache(url string) error {
-	c, ok := c.cache.Entries[urls]
-	if !ok {
+func (c *config) fetchFromCache(url string, v any) error {
+	// try to find the url in cache 1st
+	found, ok := c.cache.Entries[url]
+	if !ok { // if we did not find it, add a new cache entry with the data
 		client := &http.Client{}
 		resp, err := client.Get(url)
 		if err != nil {
@@ -199,5 +202,21 @@ func (c *config) fetchFromCache(url string) error {
 
 		defer resp.Body.Close()
 
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		c.cache.Add(url, data)
+		// return the data
+		if err = json.NewDecoder(bytes.NewReader(data)).Decode(&v); err != nil {
+			return err
+		}
 	}
+
+	// we found the url in the cache, return the data
+	if err := json.NewDecoder(bytes.NewReader(found.Val)).Decode(&v); err != nil {
+		return err
+	}
+
+	return nil
 }
