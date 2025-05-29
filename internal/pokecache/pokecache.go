@@ -1,7 +1,6 @@
 package pokecache
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -30,8 +29,7 @@ func NewCache(interval time.Duration) *Cache {
 			select {
 			case <-done:
 				return
-			case t := <-ticker.C:
-				fmt.Println("ran reap loop", ticker.C, t)
+			case <-ticker.C:
 				c.ReapLoop()
 			}
 		}

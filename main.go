@@ -117,8 +117,6 @@ func (c *config) helpCmd() error {
 	return nil
 }
 
-//TODO: Finish using the cache in the api instead of calling the api direct
-
 func (c *config) mapCmd() error {
 
 	var ah apiheader
@@ -133,7 +131,7 @@ func (c *config) mapCmd() error {
 		fmt.Println("c.next did not have value, go to baserul")
 		// fetch and encode from baseapiurl
 		if err := c.fetchFromCache(c.baseApiUrl, &ah); err != nil {
-			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.baseApiUrl)
+			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.baseApiUrl, err)
 			return err
 		}
 		// set the next url
@@ -173,23 +171,6 @@ func (c *config) mapbCmd() error {
 
 }
 
-// func fetchAndEncode(url string, v any) error {
-// 	// check cache 1st
-// 	client := &http.Client{}
-
-// 	resp, err := client.Get(url)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	defer resp.Body.Close()
-
-// 	if err = json.NewDecoder(resp.Body).Decode(&v); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
-
 func (c *config) fetchFromCache(url string, v any) error {
 	// try to find the url in cache 1st
 	found, ok := c.cache.Entries[url]
@@ -199,22 +180,29 @@ func (c *config) fetchFromCache(url string, v any) error {
 		if err != nil {
 			return err
 		}
-
 		defer resp.Body.Close()
 
+		// convert the resp.body to byte slide
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
+
+		// add to cache
 		c.cache.Add(url, data)
-		// return the data
-		if err = json.NewDecoder(bytes.NewReader(data)).Decode(&v); err != nil {
+
+		// immediately fetch the data from the cache
+		b, _ := c.cache.Get(url)
+		if err := json.NewDecoder(bytes.NewReader(b)).Decode(&v); err != nil {
+			fmt.Println("error decoding bytes", err)
 			return err
 		}
+		return nil
 	}
 
 	// we found the url in the cache, return the data
 	if err := json.NewDecoder(bytes.NewReader(found.Val)).Decode(&v); err != nil {
+		fmt.Println("error decoding:", err)
 		return err
 	}
 
