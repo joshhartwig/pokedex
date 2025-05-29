@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/joshhartwig/pokedex/internal/pokecache"
 )
 
 type cliCommand struct {
@@ -20,6 +23,7 @@ type config struct {
 	next       string
 	previous   string
 	baseApiUrl string
+	cache      pokecache.Cache
 }
 
 // json decoding
@@ -60,6 +64,9 @@ func main() {
 		},
 	}
 	app.baseApiUrl = "https://pokeapi.co/api/v2/location-area/"
+
+	// create a new cache with a timer of 10 seconds
+	app.cache = *pokecache.NewCache(time.Millisecond * 10)
 
 	// start the repl loop
 	app.repl()
@@ -108,32 +115,35 @@ func (c *config) helpCmd() error {
 	return nil
 }
 
-// TODO: map is not working now that i changed the flow, but mapb was workign
+//TODO: Finish using the cache in the api instead of calling the api direct
+
 func (c *config) mapCmd() error {
 
 	var ah apiheader
+	// if c.next is anything but empty, it likely has a url and pull from that url
 	if c.next != "" {
-		err := fetchAndEncode(c.next, &ah)
-		if err != nil {
+		fmt.Println("c.next has value: ", c.next)
+		if err := fetchAndEncode(c.next, &ah); err != nil {
 			fmt.Println("error fetching c.next")
 			return err
-		} else {
-			err := fetchAndEncode(c.baseApiUrl, &ah)
-			if err != nil {
-				fmt.Println("error fetching c.baseapiurl", c.baseApiUrl)
-				return err
-			}
 		}
-
+	} else {
+		fmt.Println("c.next did not have value, go to baserul")
+		// fetch and encode from baseapiurl
+		if err := fetchAndEncode(c.baseApiUrl, &ah); err != nil {
+			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.baseApiUrl)
+			return err
+		}
 		// set the next url
 		c.next = ah.Next
 
-		// loop through the results
-		for _, l := range ah.Results {
-			fmt.Println(l.Name)
-		}
-
 	}
+
+	// loop through the results
+	for _, l := range ah.Results {
+		fmt.Println(l.Name)
+	}
+
 	return nil
 }
 
@@ -162,6 +172,7 @@ func (c *config) mapbCmd() error {
 }
 
 func fetchAndEncode(url string, v any) error {
+	// check cache 1st
 	client := &http.Client{}
 
 	resp, err := client.Get(url)
@@ -175,4 +186,18 @@ func fetchAndEncode(url string, v any) error {
 		return err
 	}
 	return nil
+}
+
+func (c *config) fetchFromCache(url string) error {
+	c, ok := c.cache.Entries[urls]
+	if !ok {
+		client := &http.Client{}
+		resp, err := client.Get(url)
+		if err != nil {
+			return err
+		}
+
+		defer resp.Body.Close()
+
+	}
 }
