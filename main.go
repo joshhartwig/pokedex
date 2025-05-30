@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,33 +14,6 @@ import (
 
 	"github.com/joshhartwig/pokedex/internal/pokecache"
 )
-
-type cliCommand struct {
-	name        string
-	description string
-	callback    func() error
-}
-
-type config struct {
-	commands   map[string]cliCommand
-	next       string
-	previous   string
-	baseApiUrl string
-	cache      pokecache.Cache
-}
-
-// json decoding
-type location struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
-}
-
-type apiheader struct {
-	Count    int        `json:"count"`
-	Next     string     `json:"next"`
-	Previous string     `json:"previous"`
-	Results  []location `json:"results"`
-}
 
 func main() {
 	app := config{}
@@ -63,6 +37,11 @@ func main() {
 			name:        "mapb",
 			description: "used to move forward in the map",
 			callback:    app.mapbCmd,
+		},
+		"explore": {
+			name:        "explore",
+			description: "explores a section of the map",
+			callback:    app.exploreCmd,
 		},
 	}
 	app.baseApiUrl = "https://pokeapi.co/api/v2/location-area/"
@@ -90,7 +69,8 @@ func (c *config) repl() {
 			cleanedInput := cleanInput(input)
 			_, ok := c.commands[cleanedInput[0]]
 			if ok {
-				c.commands[cleanedInput[0]].callback()
+				//TODO: bug where if there is no cleanedInput[1] it will crash
+				c.commands[cleanedInput[0]].callback(cleanedInput...)
 			} else {
 				fmt.Println("Uknown command")
 			}
@@ -98,13 +78,13 @@ func (c *config) repl() {
 	}
 }
 
-func (c *config) exitCmd() error {
+func (c *config) exitCmd(s ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func (c *config) helpCmd() error {
+func (c *config) helpCmd(s ...string) error {
 	msg := `
 	Welcome to the Pokedex!\n
 	Usage:\n\n
@@ -117,7 +97,7 @@ func (c *config) helpCmd() error {
 	return nil
 }
 
-func (c *config) mapCmd() error {
+func (c *config) mapCmd(s ...string) error {
 
 	var ah apiheader
 	// if c.next is anything but empty, it likely has a url and pull from that url
@@ -129,6 +109,8 @@ func (c *config) mapCmd() error {
 		}
 	} else {
 		fmt.Println("c.next did not have value, go to baserul")
+		// set the previous the base url the 1st time
+		c.previous = c.baseApiUrl
 		// fetch and encode from baseapiurl
 		if err := c.fetchFromCache(c.baseApiUrl, &ah); err != nil {
 			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.baseApiUrl, err)
@@ -147,7 +129,7 @@ func (c *config) mapCmd() error {
 	return nil
 }
 
-func (c *config) mapbCmd() error {
+func (c *config) mapbCmd(s ...string) error {
 	var ah apiheader
 	if c.previous != "" {
 		if err := c.fetchFromCache(c.previous, &ah); err != nil {
@@ -207,4 +189,33 @@ func (c *config) fetchFromCache(url string, v any) error {
 	}
 
 	return nil
+}
+
+func (c *config) exploreCmd(args ...string) error {
+	if args[0] == "" {
+		return errors.New("invalid location")
+	}
+	fmt.Println("exploring area - ", args[1])
+
+	var ah apiheader
+	fmt.Println("previous url", c.previous)
+	err := c.fetchFromCache(c.previous, &ah)
+	if err != nil {
+		fmt.Println("error fetching from cache:", err)
+		return err
+	}
+
+	for _, v := range ah.Results {
+		if v.Name == args[1] {
+			fmt.Println("found")
+		}
+	}
+	return nil
+
+	//TODO:
+	// get the current url from the cache
+	// decode into apiheader and look at locations
+	// check to see if arg matches location
+	// now fetch new json data with area to explore
+	// decode the data and display it back to user
 }
