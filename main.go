@@ -153,6 +153,9 @@ func (c *config) mapbCmd(s ...string) error {
 
 }
 
+// fetchFromCache looks for url string in cache and returns associated data
+// if the url is not found in the cache it will download the data and add the
+// url and associated data encoded in json format to the map and return it
 func (c *config) fetchFromCache(url string, v any) error {
 	// try to find the url in cache 1st
 	found, ok := c.cache.Entries[url]
@@ -192,30 +195,35 @@ func (c *config) fetchFromCache(url string, v any) error {
 }
 
 func (c *config) exploreCmd(args ...string) error {
-	if args[0] == "" {
+	if args[0] == "" || args[1] == "" {
 		return errors.New("invalid location")
 	}
-	fmt.Println("exploring area - ", args[1])
 
+	cleanLocation := strings.TrimSpace(strings.ToLower(args[1]))
+
+	// fetch the location api data to get the location names, encode to apiheader struct and loop
+	// through them to determine if there is a match with our explore - name
 	var ah apiheader
-	fmt.Println("previous url", c.previous)
 	err := c.fetchFromCache(c.previous, &ah)
 	if err != nil {
 		fmt.Println("error fetching from cache:", err)
 		return err
 	}
 
+	// loop through apiheader.results and find the location name
 	for _, v := range ah.Results {
-		if v.Name == args[1] {
-			fmt.Println("found")
+		if v.Name == cleanLocation {
+			locationUrl := fmt.Sprintf("%s%s", c.previous, cleanLocation)
+			var locationArea LocationArea
+			// fetch from cache or download and encode to location area struct
+			c.fetchFromCache(locationUrl, &locationArea)
+
+			// loop through the pokemon encounters and list the pokemon names
+			fmt.Println("Found Pokemon:")
+			for _, k := range locationArea.PokemonEncounters {
+				fmt.Printf("- %s\n", k.Pokemon.Name)
+			}
 		}
 	}
 	return nil
-
-	//TODO:
-	// get the current url from the cache
-	// decode into apiheader and look at locations
-	// check to see if arg matches location
-	// now fetch new json data with area to explore
-	// decode the data and display it back to user
 }
