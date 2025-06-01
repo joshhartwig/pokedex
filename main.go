@@ -41,7 +41,7 @@ func main() {
 		"explore": {
 			name:        "explore",
 			description: "explores a section of the map",
-			callback:    app.exploreCmd,
+			callback:    app.altExploreCmd,
 		},
 	}
 	app.baseApiUrl = "https://pokeapi.co/api/v2/location-area/"
@@ -70,7 +70,10 @@ func (c *config) repl() {
 			_, ok := c.commands[cleanedInput[0]]
 			if ok {
 				//TODO: bug where if there is no cleanedInput[1] it will crash
-				c.commands[cleanedInput[0]].callback(cleanedInput...)
+				err := c.commands[cleanedInput[0]].callback(cleanedInput...)
+				if err != nil {
+					fmt.Println(err)
+				}
 			} else {
 				fmt.Println("Uknown command")
 			}
@@ -224,6 +227,32 @@ func (c *config) exploreCmd(args ...string) error {
 				fmt.Printf("- %s\n", k.Pokemon.Name)
 			}
 		}
+	}
+	return nil
+}
+
+func (c *config) altExploreCmd(args ...string) error {
+	// check if args are empty
+	if args[0] == "" || args[1] == "" {
+		return errors.New("invalid location")
+	}
+
+	// clean and trim them
+	cleanLocation := strings.TrimSpace(strings.ToLower(args[1]))
+
+	// check if previous url is set, if not set to base url
+	if c.previous == "" {
+		c.previous = c.baseApiUrl
+	}
+
+	// download the json data and encode to struct
+	var locationArea LocationArea
+	locationUrl := fmt.Sprintf("%s%s", c.previous, cleanLocation)
+	c.fetchFromCache(locationUrl, &locationArea)
+
+	fmt.Println("Found Pokemon:")
+	for _, k := range locationArea.PokemonEncounters {
+		fmt.Printf("- %s\n", k.Pokemon.Name)
 	}
 	return nil
 }
