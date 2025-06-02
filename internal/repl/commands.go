@@ -17,15 +17,15 @@ func Exit(c *models.Config, args ...string) error {
 }
 
 func Help(c *models.Config, args ...string) error {
-	msg := `
-	Welcome to the Pokedex!\n
-	Usage:\n\n
-	help: Displays a help message\n
-	map: Displays map of locations from api\n
-	mapb: Displays the previous locations from the api\n
-	exit: Exit the pokedex\n
-	`
-	fmt.Printf("%s", msg)
+	fmt.Println("Welcome to the Pokedex!")
+	fmt.Println("Usage:")
+	fmt.Printf("  %-10s %s\n", "help:", "Displays this help screen")
+	fmt.Printf("  %-10s %s\n", "map:", "Displays map of locations from api, consecutive calls move the map forward")
+	fmt.Printf("  %-10s %s\n", "mapb:", "Displays previous map, if called with no map call, it will call the base api")
+	fmt.Printf("  %-10s %s\n", "catch", "Attempts to catch a specific pokemon")
+	fmt.Printf("  %-10s %s\n", "explore:", "Displays pokemon in a specific region")
+	fmt.Printf("  %-10s %s\n", "inspect:", "Displays stats for a specific pokemon (must be caught first)")
+	fmt.Printf("  %-10s %s\n", "exit:", "Exit the Pokedex")
 	return nil
 }
 
@@ -160,7 +160,7 @@ func Catch(c *models.Config, args ...string) error {
 
 	// TODO: account for pokemon.BaseExp
 	if randomChance(.50) {
-		c.Pokedex[character] += pokemon
+		c.Pokedex[character] = pokemon
 		fmt.Printf("%s was caught!\n", character)
 		return nil
 	}
@@ -192,26 +192,10 @@ func Inspect(c *models.Config, args ...string) error {
 
 }
 
-/*
-Add an inspect command. It takes the name of a Pokemon and prints the name, height, weight, stats and type(s) of the Pokemon. Example usage:
-
-Pokedex > inspect pidgey
-you have not caught that pokemon
-Pokedex > catch pidgey
-Throwing a Pokeball at pidgey...
-pidgey was caught!
-Pokedex > inspect pidgey
-Name: pidgey
-Height: 3
-Weight: 18
-Stats:
-  -hp: 40
-  -attack: 45
-  -defense: 40
-  -special-attack: 35
-  -special-defense: 35
-  -speed: 56
-Types:
-  - normal
-  - flying
-*/
+func Pokedex(c *models.Config, args ...string) error {
+	fmt.Println("Your Pokedex:")
+	for _, v := range c.Pokedex {
+		fmt.Printf("\t- %s\n", v.Name)
+	}
+	return nil
+}

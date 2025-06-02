@@ -1,0 +1,36 @@
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Go build and debug
+/bin/
+/pkg/
+/vendor/
+debug/
+
+# IDE specific
+.vscode/
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# Log files
+*.log
+*.log.*
+
+# Temporary files
+tmp/
+temp/
+
+# Output of the go coverage tool
+coverage.txt
+coverage.html
