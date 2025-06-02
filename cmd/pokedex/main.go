@@ -43,8 +43,13 @@ func main() {
 		},
 		"inspect": {
 			Name:        "inspect",
-			Description: "inspects a caugth pokemon",
+			Description: "inspects a caught pokemon",
 			Callback:    func(args ...string) error { return repl.Inspect(&app, args...) },
+		},
+		"pokedex": {
+			Name:        "pokedex",
+			Description: "displays your caught pokemons",
+			Callback:    func(args ...string) error { return repl.Pokedex(&app, args...) },
 		},
 	}
 	app.Pokedex = map[string]models.Pokemon{}
