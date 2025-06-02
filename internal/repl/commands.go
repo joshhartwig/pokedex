@@ -10,13 +10,13 @@ import (
 	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
-func ExitCmd(c *models.Config, args ...string) error {
+func Exit(c *models.Config, args ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func HelpCmd(c *models.Config, args ...string) error {
+func Help(c *models.Config, args ...string) error {
 	msg := `
 	Welcome to the Pokedex!\n
 	Usage:\n\n
@@ -29,7 +29,7 @@ func HelpCmd(c *models.Config, args ...string) error {
 	return nil
 }
 
-func MapCmd(c *models.Config, args ...string) error {
+func Map(c *models.Config, args ...string) error {
 
 	var ah models.Apiheader
 	// if c.next is anything but empty, it likely has a url and pull from that url
@@ -61,7 +61,7 @@ func MapCmd(c *models.Config, args ...string) error {
 	return nil
 }
 
-func MapbCmd(c *models.Config, args ...string) error {
+func Mapb(c *models.Config, args ...string) error {
 	var ah models.Apiheader
 	if c.Previous != "" {
 		if err := api.FetchFromCache(c, c.Previous, &ah); err != nil {
@@ -85,7 +85,7 @@ func MapbCmd(c *models.Config, args ...string) error {
 
 }
 
-func ExploreCmd(c *models.Config, args ...string) error {
+func Explore(c *models.Config, args ...string) error {
 	if args[0] == "" || args[1] == "" {
 		return errors.New("invalid location")
 	}
@@ -119,7 +119,7 @@ func ExploreCmd(c *models.Config, args ...string) error {
 	return nil
 }
 
-func AltExploreCmd(c *models.Config, args ...string) error {
+func AltExplore(c *models.Config, args ...string) error {
 	// check if args are empty
 	if args[0] == "" || args[1] == "" {
 		return errors.New("invalid location")
@@ -151,7 +151,7 @@ func Catch(c *models.Config, args ...string) error {
 	}
 	// fetch the character from args1
 	character := args[1]
-	fmt.Printf("Throwing a ball at %s...\n", character)
+	fmt.Printf("Throwing a Pokeball at %s...\n", character)
 
 	// fetch and encode the pokemon data from the api
 	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s/", character)
@@ -159,8 +159,8 @@ func Catch(c *models.Config, args ...string) error {
 	api.FetchFromCache(c, url, &pokemon)
 
 	// TODO: account for pokemon.BaseExp
-	if randomChance(.25) {
-		c.Pokedex[character] = pokemon
+	if randomChance(.50) {
+		c.Pokedex[character] += pokemon
 		fmt.Printf("%s was caught!\n", character)
 		return nil
 	}
@@ -168,3 +168,50 @@ func Catch(c *models.Config, args ...string) error {
 	fmt.Printf("%s escaped!\n", character)
 	return nil
 }
+
+func Inspect(c *models.Config, args ...string) error {
+	character := args[1]
+	val, ok := c.Pokedex[character]
+	if !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", val.Name)
+	fmt.Printf("Height: %d\n", val.Height)
+	fmt.Printf("Weight: %d\n", val.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range val.Stats {
+		fmt.Printf("  -%s: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range val.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+	return nil
+
+}
+
+/*
+Add an inspect command. It takes the name of a Pokemon and prints the name, height, weight, stats and type(s) of the Pokemon. Example usage:
+
+Pokedex > inspect pidgey
+you have not caught that pokemon
+Pokedex > catch pidgey
+Throwing a Pokeball at pidgey...
+pidgey was caught!
+Pokedex > inspect pidgey
+Name: pidgey
+Height: 3
+Weight: 18
+Stats:
+  -hp: 40
+  -attack: 45
+  -defense: 40
+  -special-attack: 35
+  -special-defense: 35
+  -speed: 56
+Types:
+  - normal
+  - flying
+*/

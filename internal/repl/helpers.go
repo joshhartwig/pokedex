@@ -13,5 +13,6 @@ func cleanInput(text string) []string {
 
 // returns true percentage of the time
 func randomChance(percentage float64) bool {
-	return rand.Float64() <= (percentage / 100)
+	random := rand.Float64()
+	return random <= ((percentage * 100) / 100)
 }
