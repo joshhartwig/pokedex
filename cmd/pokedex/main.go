@@ -36,6 +36,11 @@ func main() {
 			Description: "explores a section of the map",
 			Callback:    func(args ...string) error { return repl.AltExploreCmd(&app, args...) },
 		},
+		"catch": {
+			Name:        "catch",
+			Description: "attempts to catch a pokemon",
+			Callback:    func(args ...string) error { return repl.Catch(&app, args...) },
+		},
 	}
 	app.BaseApiUrl = "https://pokeapi.co/api/v2/location-area/"
 

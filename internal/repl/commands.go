@@ -144,3 +144,27 @@ func AltExploreCmd(c *models.Config, args ...string) error {
 	}
 	return nil
 }
+
+func Catch(c *models.Config, args ...string) error {
+	if args[0] == "" || args[1] == "" {
+		return errors.New("invalid character")
+	}
+	// fetch the character from args1
+	character := args[1]
+	fmt.Printf("Throwing a ball at %s...\n", character)
+
+	// fetch and encode the pokemon data from the api
+	url := fmt.Sprintf("https://pokeapi.co/api/v2/pokemon/%s/", character)
+	var pokemon models.Pokemon
+	api.FetchFromCache(c, url, &pokemon)
+
+	// TODO: account for pokemon.BaseExp
+	if randomChance(.25) {
+		c.Pokedex[character] = pokemon
+		fmt.Printf("%s was caught!\n", character)
+		return nil
+	}
+
+	fmt.Printf("%s escaped!\n", character)
+	return nil
+}
