@@ -11,13 +11,25 @@ import (
 	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
+/*
+TODO:
+- Setup standard logger and pass through config
+- finish setting up database... initial goose setup done, finish setting up sqlc
+- add dbqueries to config
+- change the add functionality to add pokemon to database
+- fetch json data from db
+- get pokemon to fight via fight command
+- change catch diff to factor in skill
+
+*/
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("unable to load environment variables... exiting")
 		os.Exit(1) // quit to os
 	}
-	dbConnectionString := os.Getenv("DB_URL")
+	//dbConnectionString := os.Getenv("DB_URL")
 
 	app := models.Config{}
 	app.Commands = map[string]models.CliCommand{
