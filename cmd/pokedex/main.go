@@ -1,14 +1,24 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/joshhartwig/pokedex/internal/pokecache"
 	"github.com/joshhartwig/pokedex/internal/repl"
 	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("unable to load environment variables... exiting")
+		os.Exit(1) // quit to os
+	}
+	dbConnectionString := os.Getenv("DB_URL")
+
 	app := models.Config{}
 	app.Commands = map[string]models.CliCommand{
 		"exit": {
