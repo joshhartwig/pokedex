@@ -1,13 +1,18 @@
 package repl
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/joshhartwig/pokedex/internal/api"
+	"github.com/joshhartwig/pokedex/internal/database"
 	"github.com/joshhartwig/pokedex/pkg/models"
+	"github.com/sqlc-dev/pqtype"
 )
 
 func Exit(c *models.Config, args ...string) error {
@@ -161,6 +166,24 @@ func Catch(c *models.Config, args ...string) error {
 	// TODO: account for pokemon.BaseExp
 	if randomChance(.50) {
 		c.Pokedex[character] = pokemon
+
+		// marshal json from caught pokemon
+		jsonData, err := json.Marshal(pokemon)
+		if err != nil {
+			fmt.Printf("failed to marshal pokemon: %v\n", err)
+			return err
+		}
+
+		// write to database
+		_, err = c.Db.AddPokemon(context.Background(), database.AddPokemonParams{
+			ID:          uuid.New(),
+			PokemonName: character,
+			JsonData:    pqtype.NullRawMessage{RawMessage: jsonData, Valid: true},
+		})
+		if err != nil {
+			fmt.Printf("failed to insert pokemon: %v\n", err)
+			return err
+		}
 		fmt.Printf("%s was caught!\n", character)
 		return nil
 	}
@@ -194,8 +217,18 @@ func Inspect(c *models.Config, args ...string) error {
 
 func Pokedex(c *models.Config, args ...string) error {
 	fmt.Println("Your Pokedex:")
-	for _, v := range c.Pokedex {
-		fmt.Printf("\t- %s\n", v.Name)
+	// for _, v := range c.Pokedex {
+	// 	fmt.Printf("\t- %s\n", v.Name)
+	// }
+
+	pokemon, err := c.Db.ListPokemon(context.Background())
+	if err != nil {
+		fmt.Println("error fetching pokemon from database")
+		return err
+	}
+
+	for _, b := range pokemon {
+		fmt.Println(b.PokemonName)
 	}
 	return nil
 }

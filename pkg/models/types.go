@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/joshhartwig/pokedex/internal/database"
 	"github.com/joshhartwig/pokedex/internal/pokecache"
 )
 
@@ -17,6 +18,7 @@ type Config struct {
 	BaseApiUrl string
 	Cache      pokecache.Cache
 	Pokedex    map[string]Pokemon
+	Db         *database.Queries
 }
 
 // json decoding

@@ -1,22 +1,29 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/joshhartwig/pokedex/internal/database"
 	"github.com/joshhartwig/pokedex/internal/pokecache"
 	"github.com/joshhartwig/pokedex/internal/repl"
 	"github.com/joshhartwig/pokedex/pkg/models"
+
+	_ "github.com/lib/pq"
 )
 
 /*
 TODO:
-- Setup standard logger and pass through config
-- finish setting up database... initial goose setup done, finish setting up sqlc
-- add dbqueries to config
-- change the add functionality to add pokemon to database
+[ ] - add check to catch so we don't catch one with the same name and error testing this logic, it should fail as we have a unique name constraint
+[ ] - setup standard logger and clean up logging
+[x] - setup database and goose + sqlc
+[ ] - setup a way to delete pokemon
+[ ] - change catch algo to factor in skill
+[ ] -
+ - change the add functionality to add pokemon to database
 - fetch json data from db
 - get pokemon to fight via fight command
 - change catch diff to factor in skill
@@ -29,7 +36,16 @@ func main() {
 		fmt.Println("unable to load environment variables... exiting")
 		os.Exit(1) // quit to os
 	}
-	//dbConnectionString := os.Getenv("DB_URL")
+
+	dbConnStr := os.Getenv("POSTGRES_CONNSTR")
+	db, err := sql.Open("postgres", dbConnStr)
+	if err != nil {
+		fmt.Println("error connecting to db")
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	dbQueries := database.New(db)
 
 	app := models.Config{}
 	app.Commands = map[string]models.CliCommand{
@@ -76,6 +92,7 @@ func main() {
 	}
 	app.Pokedex = map[string]models.Pokemon{}
 	app.BaseApiUrl = "https://pokeapi.co/api/v2/location-area/"
+	app.Db = dbQueries
 
 	// create a new cache with a timer of 10 seconds
 	app.Cache = *pokecache.NewCache(time.Millisecond * 10)
