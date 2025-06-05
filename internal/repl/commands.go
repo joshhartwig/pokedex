@@ -94,44 +94,8 @@ func Mapb(c *models.Config, args ...string) error {
 
 }
 
-// Explore fetches the pokemon in a specific location from the PokeAPI and displays them.
-func Explore(c *models.Config, args ...string) error {
-	if args[0] == "" || args[1] == "" {
-		c.Logger.Error("error invalid arguments being passed", "arg0", args[0], "args1", args[1])
-		return errors.New("invalid location")
-	}
-
-	cleanLocation := strings.TrimSpace(strings.ToLower(args[1]))
-
-	// fetch the location api data to get the location names, encode to apiheader struct and loop
-	// through them to determine if there is a match with our explore - name
-	var ah models.Apiheader
-	err := api.FetchFromCache(c, c.Previous, &ah)
-	if err != nil {
-		c.Logger.Error("error fetching from cache", "error", err)
-		return err
-	}
-
-	// loop through apiheader.results and find the location name
-	for _, v := range ah.Results {
-		if v.Name == cleanLocation {
-			locationUrl := fmt.Sprintf("%s%s", c.Previous, cleanLocation)
-			var locationArea models.LocationArea
-			// fetch from cache or download and encode to location area struct
-			api.FetchFromCache(c, locationUrl, &locationArea)
-
-			// loop through the pokemon encounters and list the pokemon names
-			fmt.Println("Found Pokemon:")
-			for _, k := range locationArea.PokemonEncounters {
-				fmt.Printf("- %s\n", k.Pokemon.Name)
-			}
-		}
-	}
-	return nil
-}
-
 // AltExplore is an alternative explore function that allows for more direct exploration
-func AltExplore(c *models.Config, args ...string) error {
+func Explore(c *models.Config, args ...string) error {
 	// check if args are empty
 	if args[0] == "" || args[1] == "" {
 		c.Logger.Error("invalid location arguments", "args", args)

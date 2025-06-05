@@ -78,7 +78,7 @@ func main() {
 		"explore": {
 			Name:        "explore",
 			Description: "explores a section of the map",
-			Callback:    func(args ...string) error { return repl.AltExplore(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Explore(&app, args...) },
 		},
 		"catch": {
 			Name:        "catch",
