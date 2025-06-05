@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"os"
 	"time"
 
@@ -18,36 +19,41 @@ import (
 /*
 TODO:
 [ ] - add check to catch so we don't catch one with the same name and error testing this logic, it should fail as we have a unique name constraint
-[ ] - setup standard logger and clean up logging
+[x] - setup standard logger and clean up logging
 [x] - setup database and goose + sqlc
 [ ] - setup a way to delete pokemon
 [ ] - change catch algo to factor in skill
-[ ] -
- - change the add functionality to add pokemon to database
-- fetch json data from db
-- get pokemon to fight via fight command
-- change catch diff to factor in skill
+[ ] - add a fight command to fight pokemon
+[ ] - fix the bug where if you call mapb before map it will not work
 
 */
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("unable to load environment variables... exiting")
+		fmt.Printf("unable to load environment variables: %v\n", err)
 		os.Exit(1) // quit to os
 	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 
 	dbConnStr := os.Getenv("POSTGRES_CONNSTR")
 	db, err := sql.Open("postgres", dbConnStr)
 	if err != nil {
-		fmt.Println("error connecting to db")
-		fmt.Println(err)
+		fmt.Printf("error connecting to db: %v\n", err)
 		os.Exit(1)
 	}
 
 	dbQueries := database.New(db)
 
-	app := models.Config{}
+	app := models.Config{
+		Logger:     logger,
+		Db:         dbQueries,
+		BaseApiUrl: "https://pokeapi.co/api/v2/location-area/",
+		Cache:      *pokecache.NewCache(time.Millisecond * 10),
+		Pokedex:    map[string]models.Pokemon{},
+	}
+
 	app.Commands = map[string]models.CliCommand{
 		"exit": {
 			Name:        "exit",
@@ -89,14 +95,12 @@ func main() {
 			Description: "displays your caught pokemons",
 			Callback:    func(args ...string) error { return repl.Pokedex(&app, args...) },
 		},
+		"history": {
+			Name:        "history",
+			Description: "display command line history for each command",
+			Callback:    func(args ...string) error { return repl.History(&app, args...) },
+		},
 	}
-	app.Pokedex = map[string]models.Pokemon{}
-	app.BaseApiUrl = "https://pokeapi.co/api/v2/location-area/"
-	app.Db = dbQueries
 
-	// create a new cache with a timer of 10 seconds
-	app.Cache = *pokecache.NewCache(time.Millisecond * 10)
-
-	// start the repl loop
 	repl.Repl(&app)
 }

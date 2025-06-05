@@ -15,12 +15,14 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+// Exit is a command that exits the Pokedex application.
 func Exit(c *models.Config, args ...string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
+// Help displays the help screen for the Pokedex application.
 func Help(c *models.Config, args ...string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
@@ -34,23 +36,22 @@ func Help(c *models.Config, args ...string) error {
 	return nil
 }
 
+// Map fetches the map of locations from the PokeAPI and displays them.
 func Map(c *models.Config, args ...string) error {
 
 	var ah models.Apiheader
 	// if c.next is anything but empty, it likely has a url and pull from that url
 	if c.Next != "" {
-		fmt.Println("c.next has value: ", c.Next)
 		if err := api.FetchFromCache(c, c.Next, &ah); err != nil {
-			fmt.Println("error fetching c.next")
+			c.Logger.Error("error fetching from cache", "error", err)
 			return err
 		}
 	} else {
-		fmt.Println("c.next did not have value, go to baserul")
 		// set the previous the base url the 1st time
 		c.Previous = c.BaseApiUrl
 		// fetch and encode from baseapiurl
 		if err := api.FetchFromCache(c, c.BaseApiUrl, &ah); err != nil {
-			fmt.Println("error doing fetch& encode on c.baseapiurl: ", c.BaseApiUrl, err)
+			c.Logger.Error("error doing fetching from cache", "error", err)
 			return err
 		}
 		// set the next url
@@ -66,14 +67,17 @@ func Map(c *models.Config, args ...string) error {
 	return nil
 }
 
+// Mapb fetches the previous map of locations from the PokeAPI and displays them.
 func Mapb(c *models.Config, args ...string) error {
 	var ah models.Apiheader
 	if c.Previous != "" {
 		if err := api.FetchFromCache(c, c.Previous, &ah); err != nil {
+			c.Logger.Error("error fetching from cache", "error", err)
 			return err
 		}
 	} else {
 		if err := api.FetchFromCache(c, c.BaseApiUrl, &ah); err != nil {
+			c.Logger.Error("error fetching from cache", "error", err)
 			return err
 		}
 	}
@@ -90,8 +94,10 @@ func Mapb(c *models.Config, args ...string) error {
 
 }
 
+// Explore fetches the pokemon in a specific location from the PokeAPI and displays them.
 func Explore(c *models.Config, args ...string) error {
 	if args[0] == "" || args[1] == "" {
+		c.Logger.Error("error invalid arguments being passed", "arg0", args[0], "args1", args[1])
 		return errors.New("invalid location")
 	}
 
@@ -102,7 +108,7 @@ func Explore(c *models.Config, args ...string) error {
 	var ah models.Apiheader
 	err := api.FetchFromCache(c, c.Previous, &ah)
 	if err != nil {
-		fmt.Println("error fetching from cache:", err)
+		c.Logger.Error("error fetching from cache", "error", err)
 		return err
 	}
 
@@ -124,9 +130,11 @@ func Explore(c *models.Config, args ...string) error {
 	return nil
 }
 
+// AltExplore is an alternative explore function that allows for more direct exploration
 func AltExplore(c *models.Config, args ...string) error {
 	// check if args are empty
 	if args[0] == "" || args[1] == "" {
+		c.Logger.Error("invalid location arguments", "args", args)
 		return errors.New("invalid location")
 	}
 
@@ -150,8 +158,11 @@ func AltExplore(c *models.Config, args ...string) error {
 	return nil
 }
 
+// Catch attempts to catch a pokemon by throwing a Pokeball at it.
 func Catch(c *models.Config, args ...string) error {
 	if args[0] == "" || args[1] == "" {
+		// log the error and return
+		c.Logger.Error("invalid character arguments", "args", args)
 		return errors.New("invalid character")
 	}
 	// fetch the character from args1
@@ -170,7 +181,7 @@ func Catch(c *models.Config, args ...string) error {
 		// marshal json from caught pokemon
 		jsonData, err := json.Marshal(pokemon)
 		if err != nil {
-			fmt.Printf("failed to marshal pokemon: %v\n", err)
+			c.Logger.Error("failed to marshal pokemon", "error", err)
 			return err
 		}
 
@@ -181,22 +192,23 @@ func Catch(c *models.Config, args ...string) error {
 			JsonData:    pqtype.NullRawMessage{RawMessage: jsonData, Valid: true},
 		})
 		if err != nil {
-			fmt.Printf("failed to insert pokemon: %v\n", err)
+			c.Logger.Error("failed to insert pokemon", "error", err)
 			return err
 		}
-		fmt.Printf("%s was caught!\n", character)
+		c.Logger.Info("pokemon caught", "pokemon", character)
 		return nil
 	}
 
-	fmt.Printf("%s escaped!\n", character)
+	c.Logger.Info("pokemon escaped", "pokemon", character)
 	return nil
 }
 
+// Inspect displays the details of a caught pokemon.
 func Inspect(c *models.Config, args ...string) error {
 	character := args[1]
 	val, ok := c.Pokedex[character]
 	if !ok {
-		fmt.Println("you have not caught that pokemon")
+		c.Logger.Error("pokemon not found", "pokemon", character)
 		return nil
 	}
 
@@ -215,20 +227,31 @@ func Inspect(c *models.Config, args ...string) error {
 
 }
 
+// Pokedex displays the list of caught pokemon.
 func Pokedex(c *models.Config, args ...string) error {
 	fmt.Println("Your Pokedex:")
-	// for _, v := range c.Pokedex {
-	// 	fmt.Printf("\t- %s\n", v.Name)
-	// }
+	if len(c.Pokedex) == 0 {
+		fmt.Println("You have not caught any pokemon yet.")
+		return nil
+	}
 
 	pokemon, err := c.Db.ListPokemon(context.Background())
 	if err != nil {
-		fmt.Println("error fetching pokemon from database")
+		c.Logger.Error("error fetching pokemon from database", "error", err)
 		return err
 	}
 
 	for _, b := range pokemon {
 		fmt.Println(b.PokemonName)
+	}
+	return nil
+}
+
+// History shows all the commands that were previously used
+func History(c *models.Config, args ...string) error {
+	fmt.Println("History:")
+	for _, c := range c.History {
+		fmt.Printf("-%s\n", c)
 	}
 	return nil
 }

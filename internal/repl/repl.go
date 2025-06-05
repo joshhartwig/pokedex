@@ -8,6 +8,9 @@ import (
 	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
+// Repl starts a Read-Eval-Print Loop for the Pokedex application.
+// It reads user input from the command line, processes commands, and executes the corresponding callbacks.
+// It will continue to prompt for input until the user exits the application.
 func Repl(c *models.Config) {
 	scanner := bufio.NewScanner(os.Stdin)
 
@@ -16,15 +19,26 @@ func Repl(c *models.Config) {
 		if scanner.Scan() {
 			input := scanner.Text()
 			cleanedInput := cleanInput(input)
-			_, ok := c.Commands[cleanedInput[0]]
-			if ok {
-				//TODO: bug where if there is no cleanedInput[1] it will crash
-				err := c.Commands[cleanedInput[0]].Callback(cleanedInput...)
-				if err != nil {
-					fmt.Println(err)
-				}
-			} else {
-				fmt.Println("Uknown command")
+
+			// user must enter a command
+			if len(cleanedInput) == 0 {
+				fmt.Println("Please enter a command. Type help for assistance.")
+				continue
+			}
+
+			cmd, ok := c.Commands[cleanedInput[0]]
+			if !ok {
+				fmt.Println("Uknown Command, type Help for assistance")
+				continue
+			}
+
+			// add the command to the history
+			c.History = append(c.History, cleanedInput[0])
+
+			err := cmd.Callback(cleanedInput...)
+			if err != nil {
+				c.Logger.Error("error executing command", "command", cleanedInput[0], "error", err)
+				return
 			}
 		}
 	}

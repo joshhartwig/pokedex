@@ -5,18 +5,20 @@ import (
 	"time"
 )
 
+// CacheEntry represents a single entry in the cache, containing the creation time and the value.
 type CacheEntry struct {
 	CreatedAt time.Time
 	Val       []byte
 }
 
+// Cache is a simple in-memory cache that stores entries with a key and a value.
 type Cache struct {
 	Entries  map[string]CacheEntry
 	MU       sync.Mutex
 	Interval time.Duration
 }
 
-// create a new cache
+// NewCache initializes a new Cache with a specified interval for reaping old entries.
 func NewCache(interval time.Duration) *Cache {
 	c := Cache{}
 	c.Entries = make(map[string]CacheEntry)
@@ -38,7 +40,8 @@ func NewCache(interval time.Duration) *Cache {
 	return &c
 }
 
-// locks the cache and add a new cache entry with the value of v
+// Add adds a new entry to the cache with the current time as the creation time.
+// If the key already exists, it will overwrite the existing entry.
 func (c *Cache) Add(s string, v []byte) {
 	c.MU.Lock()
 
@@ -50,7 +53,7 @@ func (c *Cache) Add(s string, v []byte) {
 	c.Entries[s] = ce
 }
 
-// returns our cache entry if found
+// Get returns our cache entry if found
 func (c *Cache) Get(s string) ([]byte, bool) {
 	c.MU.Lock()
 
@@ -63,6 +66,8 @@ func (c *Cache) Get(s string) ([]byte, bool) {
 	return c.Entries[s].Val, true
 }
 
+// ReapLoop checks each entry in the cache and removes those that are older than the specified interval.
+// It is called periodically based on the interval set during cache initialization.
 func (c *Cache) ReapLoop() {
 	c.MU.Lock()
 	defer c.MU.Unlock()

@@ -1,6 +1,8 @@
 package models
 
 import (
+	"log/slog"
+
 	"github.com/joshhartwig/pokedex/internal/database"
 	"github.com/joshhartwig/pokedex/internal/pokecache"
 )
@@ -19,6 +21,8 @@ type Config struct {
 	Cache      pokecache.Cache
 	Pokedex    map[string]Pokemon
 	Db         *database.Queries
+	Logger     *slog.Logger
+	History    []string
 }
 
 // json decoding
