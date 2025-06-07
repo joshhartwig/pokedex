@@ -17,7 +17,7 @@ import (
 
 // Exit is a command that exits the Pokedex application.
 func Exit(c *models.Config, args ...string) error {
-	fmt.Println("Closing the Pokedex... Goodbye!")
+	fmt.Println("Persisting Pokemon to database")
 	os.Exit(0)
 	return nil
 }
@@ -97,7 +97,7 @@ func Mapb(c *models.Config, args ...string) error {
 // AltExplore is an alternative explore function that allows for more direct exploration
 func Explore(c *models.Config, args ...string) error {
 	// check if args are empty
-	if err := checkArgs(c, args); err != nil {
+	if err := checkArgs(args); err != nil {
 		return errors.New("invalid location")
 	}
 
@@ -123,7 +123,7 @@ func Explore(c *models.Config, args ...string) error {
 
 // Catch attempts to catch a pokemon by throwing a Pokeball at it.
 func Catch(c *models.Config, args ...string) error {
-	if err := checkArgs(c, args); err != nil {
+	if err := checkArgs(args); err != nil {
 		// log the error and return
 		c.Logger.Error("invalid character arguments", "args", args)
 		return errors.New("invalid character")
@@ -131,9 +131,15 @@ func Catch(c *models.Config, args ...string) error {
 	// fetch the character from args1
 	character := args[1]
 
-	// check our in memory cache to see if we already have this char
+	// check the map to see if the character exists
 	_, ok := c.Pokedex[character]
-	if !ok {
+	if ok {
+		return fmt.Errorf("already caught %s", character)
+	}
+
+	// check the db to see if the char exists
+	_, err := c.Db.GetPokemonByName(context.Background(), character)
+	if err == nil {
 		return fmt.Errorf("already caught %s", character)
 	}
 
@@ -144,7 +150,7 @@ func Catch(c *models.Config, args ...string) error {
 	var pokemon models.Pokemon
 	api.FetchFromCache(c, url, &pokemon)
 
-	// TODO: account for pokemon.BaseExp
+	// attempt to catch pokemon
 	if randomChance(.50) {
 		c.Pokedex[character] = pokemon
 
@@ -155,17 +161,17 @@ func Catch(c *models.Config, args ...string) error {
 			return err
 		}
 
-		// write to database
+		//write to database
 		_, err = c.Db.AddPokemon(context.Background(), database.AddPokemonParams{
 			ID:          uuid.New(),
 			PokemonName: character,
 			JsonData:    pqtype.NullRawMessage{RawMessage: jsonData, Valid: true},
 		})
 		if err != nil {
-			c.Logger.Error("failed to insert pokemon", "error", err)
+			fmt.Printf("Failed to catch %s\n", character)
 			return err
 		}
-		c.Logger.Info("pokemon caught", "pokemon", character)
+		fmt.Printf("You caught %s!\n", character)
 		return nil
 	}
 

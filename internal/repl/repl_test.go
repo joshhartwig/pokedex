@@ -31,3 +31,7 @@ func TestCleanInput(t *testing.T) {
 		}
 	}
 }
+
+func TestCatch(t *testing.T) {
+
+}
