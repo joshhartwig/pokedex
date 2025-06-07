@@ -25,6 +25,7 @@ TODO:
 [ ] - change catch algo to factor in skill
 [ ] - add a fight command to fight pokemon
 [ ] - fix the bug where if you call mapb before map it will not work
+[ ] - change db model to populate cache on launch and persist at exit
 
 */
 
@@ -54,6 +55,7 @@ func main() {
 		Pokedex:    map[string]models.Pokemon{},
 	}
 
+	// setup the commands
 	app.Commands = map[string]models.CliCommand{
 		"exit": {
 			Name:        "exit",

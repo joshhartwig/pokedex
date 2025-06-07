@@ -97,8 +97,7 @@ func Mapb(c *models.Config, args ...string) error {
 // AltExplore is an alternative explore function that allows for more direct exploration
 func Explore(c *models.Config, args ...string) error {
 	// check if args are empty
-	if args[0] == "" || args[1] == "" {
-		c.Logger.Error("invalid location arguments", "args", args)
+	if err := checkArgs(c, args); err != nil {
 		return errors.New("invalid location")
 	}
 
@@ -124,13 +123,20 @@ func Explore(c *models.Config, args ...string) error {
 
 // Catch attempts to catch a pokemon by throwing a Pokeball at it.
 func Catch(c *models.Config, args ...string) error {
-	if args[0] == "" || args[1] == "" {
+	if err := checkArgs(c, args); err != nil {
 		// log the error and return
 		c.Logger.Error("invalid character arguments", "args", args)
 		return errors.New("invalid character")
 	}
 	// fetch the character from args1
 	character := args[1]
+
+	// check our in memory cache to see if we already have this char
+	_, ok := c.Pokedex[character]
+	if !ok {
+		return fmt.Errorf("already caught %s", character)
+	}
+
 	fmt.Printf("Throwing a Pokeball at %s...\n", character)
 
 	// fetch and encode the pokemon data from the api

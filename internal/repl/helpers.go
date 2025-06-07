@@ -1,8 +1,11 @@
 package repl
 
 import (
+	"errors"
 	"math/rand"
 	"strings"
+
+	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
 // cleanInput takes a string and returns a slice of strings
@@ -20,4 +23,15 @@ func cleanInput(text string) []string {
 func randomChance(percentage float64) bool {
 	random := rand.Float64()
 	return random <= ((percentage * 100) / 100)
+}
+
+func checkArgs(c *models.Config, args []string) error {
+	if len(args) < 2 {
+		return errors.New("this command requires two arguments")
+	}
+
+	if strings.TrimSpace(args[0]) == "" || strings.TrimSpace(args[1]) == "" {
+		return errors.New("arguments cannot be empty")
+	}
+	return nil
 }

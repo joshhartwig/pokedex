@@ -37,8 +37,7 @@ func Repl(c *models.Config) {
 
 			err := cmd.Callback(cleanedInput...)
 			if err != nil {
-				c.Logger.Error("error executing command", "command", cleanedInput[0], "error", err)
-				return
+				fmt.Println("The command you just ran requires additional requirements")
 			}
 		}
 	}
