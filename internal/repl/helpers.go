@@ -4,8 +4,6 @@ import (
 	"errors"
 	"math/rand"
 	"strings"
-
-	"github.com/joshhartwig/pokedex/pkg/models"
 )
 
 // cleanInput takes a string and returns a slice of strings
@@ -25,7 +23,7 @@ func randomChance(percentage float64) bool {
 	return random <= ((percentage * 100) / 100)
 }
 
-func checkArgs(c *models.Config, args []string) error {
+func checkArgs(args []string) error {
 	if len(args) < 2 {
 		return errors.New("this command requires two arguments")
 	}
