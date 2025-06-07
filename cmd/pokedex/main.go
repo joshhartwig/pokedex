@@ -16,19 +16,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-/*
-TODO:
-[ ] - add check to catch so we don't catch one with the same name and error testing this logic, it should fail as we have a unique name constraint
-[x] - setup standard logger and clean up logging
-[x] - setup database and goose + sqlc
-[ ] - setup a way to delete pokemon
-[ ] - change catch algo to factor in skill
-[ ] - add a fight command to fight pokemon
-[ ] - fix the bug where if you call mapb before map it will not work
-[ ] - change db model to populate cache on launch and persist at exit
-
-*/
-
 func main() {
 	err := godotenv.Load()
 	if err != nil {
