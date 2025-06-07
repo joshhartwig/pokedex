@@ -18,7 +18,7 @@ func cleanInput(text string) []string {
 // randomChance takes a percentage as a float64 and returns true if a randomly generated float64
 // is less than or equal to the percentage. This is useful for simulating random events
 // such as catching a Pokémon or finding an item.
-func randomChance(percentage float64) bool {
+func CatchPokemon(percentage float64) bool {
 	random := rand.Float64()
 	return random <= ((percentage * 100) / 100)
 }
