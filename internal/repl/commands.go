@@ -151,7 +151,7 @@ func Catch(c *models.Config, args ...string) error {
 	api.FetchFromCache(c, url, &pokemon)
 
 	// attempt to catch pokemon
-	if CatchPokemon(.50) {
+	if CatchPokemon(.25, pokemon.BaseExperience) {
 		c.Pokedex[character] = pokemon
 
 		// marshal json from caught pokemon

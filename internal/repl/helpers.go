@@ -15,14 +15,39 @@ func cleanInput(text string) []string {
 	return strings.Split(text, " ")
 }
 
-// randomChance takes a percentage as a float64 and returns true if a randomly generated float64
-// is less than or equal to the percentage. This is useful for simulating random events
-// such as catching a Pokémon or finding an item.
-func CatchPokemon(percentage float64) bool {
+// CatchPokemon attempts to catch a Pokemon based on a base catch chance and the Pokemon's base experience.
+// The final catch probability is calculated by reducing the base chance according to the Pokemon's experience level,
+// with higher-level Pokemon being harder to catch. The final probability is clamped between 1% and 95%.
+//
+// Parameters:
+//   - baseChance: The initial probability of catching the Pokemon (between 0.0 and 1.0)
+//   - baseExperience: The Pokemon's base experience value, affecting catch difficulty
+//
+// Returns:
+//   - bool: true if the Pokemon was caught, false otherwise
+func CatchPokemon(baseChance float64, baseExperience int) bool {
+	const experienceFactor = 0.001 // tuning constant — adjust to your liking
+
+	// Compute final catch chance
+	catchChance := baseChance - (float64(baseExperience) * experienceFactor)
+
+	// Clamp between 1% and 95% to avoid extremes
+	if catchChance < 0.01 {
+		catchChance = 0.01
+	}
+	if catchChance > 0.95 {
+		catchChance = 0.95
+	}
+
+	// Perform the catch roll
 	random := rand.Float64()
-	return random <= ((percentage * 100) / 100)
+	return random <= catchChance
 }
 
+// checkArgs validates command line arguments.
+// It ensures there are at least two arguments provided and neither is empty.
+// Returns an error if validation fails, nil otherwise.
+// args: Slice of strings containing command line arguments
 func checkArgs(args []string) error {
 	if len(args) < 2 {
 		return errors.New("this command requires two arguments")
