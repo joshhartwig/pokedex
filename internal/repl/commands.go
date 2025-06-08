@@ -231,6 +231,7 @@ func History(c *models.Config, args ...string) error {
 	return nil
 }
 
+// TODO: implement fight alorithim where one pokemon dies and remove him
 func Fight(c *models.Config, args ...string) error {
 	err := checkArgs(3, args)
 	if err != nil {
