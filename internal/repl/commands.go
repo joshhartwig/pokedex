@@ -17,7 +17,7 @@ import (
 
 // Exit is a command that exits the Pokedex application.
 func Exit(c *models.Config, args ...string) error {
-	fmt.Println("Persisting Pokemon to database")
+	fmt.Println("Exiting Pokedex...")
 	os.Exit(0)
 	return nil
 }
@@ -97,7 +97,7 @@ func Mapb(c *models.Config, args ...string) error {
 // AltExplore is an alternative explore function that allows for more direct exploration
 func Explore(c *models.Config, args ...string) error {
 	// check if args are empty
-	if err := checkArgs(args); err != nil {
+	if err := checkArgs(2, args); err != nil {
 		return errors.New("invalid location")
 	}
 
@@ -123,9 +123,8 @@ func Explore(c *models.Config, args ...string) error {
 
 // Catch attempts to catch a pokemon by throwing a Pokeball at it.
 func Catch(c *models.Config, args ...string) error {
-	if err := checkArgs(args); err != nil {
+	if err := checkArgs(2, args); err != nil {
 		// log the error and return
-		c.Logger.Error("invalid character arguments", "args", args)
 		return errors.New("invalid character")
 	}
 	// fetch the character from args1
@@ -168,14 +167,14 @@ func Catch(c *models.Config, args ...string) error {
 			JsonData:    pqtype.NullRawMessage{RawMessage: jsonData, Valid: true},
 		})
 		if err != nil {
-			fmt.Printf("Failed to catch %s\n", character)
+			c.Logger.Error("failed to add pokemon to database with error", "error", err)
 			return err
 		}
 		fmt.Printf("You caught %s!\n", character)
 		return nil
 	}
 
-	c.Logger.Info("pokemon escaped", "pokemon", character)
+	fmt.Printf("Pokemon %s escaped\n!", character)
 	return nil
 }
 
@@ -230,4 +229,12 @@ func History(c *models.Config, args ...string) error {
 		fmt.Printf("-%s\n", c)
 	}
 	return nil
+}
+
+func Fight(c *models.Config, args ...string) error {
+	err := checkArgs(3, args)
+	if err != nil {
+		return errors.New("not enough arguments, Fight requires 3 arguments")
+	}
+
 }

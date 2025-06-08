@@ -48,13 +48,16 @@ func CatchPokemon(baseChance float64, baseExperience int) bool {
 // It ensures there are at least two arguments provided and neither is empty.
 // Returns an error if validation fails, nil otherwise.
 // args: Slice of strings containing command line arguments
-func checkArgs(args []string) error {
+func checkArgs(wantedLength int, args []string) error {
 	if len(args) < 2 {
 		return errors.New("this command requires two arguments")
 	}
 
-	if strings.TrimSpace(args[0]) == "" || strings.TrimSpace(args[1]) == "" {
-		return errors.New("arguments cannot be empty")
+	for x := 0; x < wantedLength; x++ {
+		if strings.TrimSpace(args[x]) == "" {
+			return errors.New("arguments cannot be empty")
+		}
 	}
+
 	return nil
 }
