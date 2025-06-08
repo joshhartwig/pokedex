@@ -237,5 +237,5 @@ func Fight(c *models.Config, args ...string) error {
 	if err != nil {
 		return errors.New("not enough arguments, Fight requires 3 arguments")
 	}
-
+	return nil
 }

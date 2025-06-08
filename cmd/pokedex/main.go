@@ -34,7 +34,7 @@ func main() {
 
 	dbQueries := database.New(db)
 
-	app := models.Config{
+	conf := models.Config{
 		Logger:     logger,
 		Db:         dbQueries,
 		BaseApiUrl: "https://pokeapi.co/api/v2/location-area/",
@@ -43,53 +43,53 @@ func main() {
 	}
 
 	// setup the commands
-	app.Commands = map[string]models.CliCommand{
+	conf.Commands = map[string]models.CliCommand{
 		"exit": {
 			Name:        "exit",
 			Description: "used to close the app",
-			Callback:    func(args ...string) error { return repl.Exit(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Exit(&conf, args...) },
 		},
 		"help": {
 			Name:        "help",
 			Description: "used to get help",
-			Callback:    func(args ...string) error { return repl.Help(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Help(&conf, args...) },
 		},
 		"map": {
 			Name:        "map",
 			Description: "used to list all the pokedex locations",
-			Callback:    func(args ...string) error { return repl.Map(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Map(&conf, args...) },
 		},
 		"mapb": {
 			Name:        "mapb",
 			Description: "used to move forward in the map",
-			Callback:    func(args ...string) error { return repl.Mapb(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Mapb(&conf, args...) },
 		},
 		"explore": {
 			Name:        "explore",
 			Description: "explores a section of the map",
-			Callback:    func(args ...string) error { return repl.Explore(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Explore(&conf, args...) },
 		},
 		"catch": {
 			Name:        "catch",
 			Description: "attempts to catch a pokemon",
-			Callback:    func(args ...string) error { return repl.Catch(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Catch(&conf, args...) },
 		},
 		"inspect": {
 			Name:        "inspect",
 			Description: "inspects a caught pokemon",
-			Callback:    func(args ...string) error { return repl.Inspect(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Inspect(&conf, args...) },
 		},
 		"pokedex": {
 			Name:        "pokedex",
 			Description: "displays your caught pokemons",
-			Callback:    func(args ...string) error { return repl.Pokedex(&app, args...) },
+			Callback:    func(args ...string) error { return repl.Pokedex(&conf, args...) },
 		},
 		"history": {
 			Name:        "history",
 			Description: "display command line history for each command",
-			Callback:    func(args ...string) error { return repl.History(&app, args...) },
+			Callback:    func(args ...string) error { return repl.History(&conf, args...) },
 		},
 	}
 
-	repl.Repl(&app)
+	repl.Repl(&conf)
 }
