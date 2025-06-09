@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -89,7 +91,42 @@ func main() {
 			Description: "display command line history for each command",
 			Callback:    func(args ...string) error { return repl.History(&conf, args...) },
 		},
+		"fight": {
+			Name:        "fight",
+			Description: "fight two pokemon that you have caught",
+			Callback:    func(args ...string) error { return repl.Fight(&conf, args...) },
+		},
+	}
+	loadPokedexFromDb(&conf)
+	repl.Repl(&conf)
+}
+
+// loadPokedexFromDb loads Pokemon data from the database into the Pokedex cache.
+// It retrieves all Pokemon rows from the database, unmarshals the JSON data for each Pokemon,
+// and stores them in the Config's Pokedex map using the Pokemon name as the key.
+// If there is an error retrieving the Pokemon list or unmarshaling individual Pokemon data,
+// it will either return the error or log it and continue to the next Pokemon.
+//
+// Parameters:
+//   - c: A pointer to the Config struct containing the database connection and Pokedex map
+//
+// Returns:
+//   - error: Returns an error if the database query fails, nil otherwise
+func loadPokedexFromDb(c *models.Config) error {
+	pokemonRows, err := c.Db.ListPokemon(context.Background())
+	if err != nil {
+		return err
 	}
 
-	repl.Repl(&conf)
+	for _, row := range pokemonRows {
+		var p models.Pokemon
+		if err := json.Unmarshal(row.JsonData.RawMessage, &p); err != nil {
+			c.Logger.Error("failed to unmarhsal pokemon")
+			continue
+		}
+
+		c.Pokedex[row.PokemonName] = p
+
+	}
+	return nil
 }

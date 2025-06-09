@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 
@@ -231,11 +232,74 @@ func History(c *models.Config, args ...string) error {
 	return nil
 }
 
-// TODO: implement fight alorithim where one pokemon dies and remove him
+// Fight simulates a battle between two Pokemon from the user's Pokedex.
+// It takes a Config pointer and variable number of string arguments.
+// The first argument should be the command name, and the second and third arguments
+// should be the names of two Pokemon to battle.
+//
+// The battle mechanics:
+// - Each Pokemon rolls 3 times, with maximum roll value being their base experience
+// - The total of the rolls determines the winner
+// - In case of a tie, the battle is repeated
+// - The losing Pokemon is removed from the Pokedex
+//
+// Returns an error if:
+// - Incorrect number of arguments provided
+// - Either Pokemon is not found in the Pokedex
 func Fight(c *models.Config, args ...string) error {
 	err := checkArgs(3, args)
 	if err != nil {
 		return errors.New("not enough arguments, Fight requires 3 arguments")
 	}
+	firstChar := args[1]
+	secondChar := args[2]
+
+	// check to see if either characters are in the pokedex
+	firstPoke, firstOk := c.Pokedex[firstChar]
+	if !firstOk {
+		fmt.Printf("%s is not one of your caught pokemon\n", firstChar)
+		return errors.New("character not found")
+	}
+
+	secondPoke, secondOk := c.Pokedex[secondChar]
+	if !secondOk {
+		fmt.Printf("%s is not one of your caught pokemon\n", secondChar)
+		return errors.New("character not found")
+	}
+
+	rolls := 3
+	firstTotal := 0
+	secondTotal := 0
+
+	fmt.Printf("%s rolls: ", firstChar)
+	for i := 0; i < rolls; i++ {
+		roll := rand.Intn(firstPoke.BaseExperience + 1)
+		firstTotal += roll
+		fmt.Printf("%d ", roll)
+	}
+	fmt.Printf("= %d\n", firstTotal)
+
+	fmt.Printf("%s rolls: ", secondChar)
+	for i := 0; i < rolls; i++ {
+		roll := rand.Intn(secondPoke.BaseExperience + 1)
+		secondTotal += roll
+		fmt.Printf("%d ", roll)
+	}
+	fmt.Printf("= %d\n", secondTotal)
+
+	var winner, loser string
+	if firstTotal > secondTotal {
+		winner = firstChar
+		loser = secondChar
+	} else if secondTotal > firstTotal {
+		winner = secondChar
+		loser = firstChar
+	} else {
+		fmt.Println("It's a tie! Rolling again...")
+		return Fight(c, args...) // rerun fight on tie
+	}
+
+	fmt.Printf("%s wins! %s is removed from your pokedex.\n", winner, loser)
+	delete(c.Pokedex, loser)
 	return nil
 }
